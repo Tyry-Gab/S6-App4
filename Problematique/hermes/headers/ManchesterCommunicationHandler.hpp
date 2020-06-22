@@ -10,7 +10,7 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     private:
     uint8_t m_TXPin;
     uint8_t m_RXPin;
-    Timer* m_Timer;
+    Timer m_Timer;
 
     uint8_t m_BitToSend;
     bool m_HasSent;

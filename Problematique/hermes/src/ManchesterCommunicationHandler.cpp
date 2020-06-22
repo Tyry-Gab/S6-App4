@@ -7,14 +7,13 @@
 #include "Particle.h"
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler() {
-    new (m_Timer) Timer(100, &ManchesterCommunicationHandler::send, *this);
-    m_Timer->start();
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(100, &ManchesterCommunicationHandler::send, *this) {
+    m_Timer.start();
 }
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin) {
-    new (m_Timer) Timer(100, &ManchesterCommunicationHandler::send, *this);
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(100, &ManchesterCommunicationHandler::send, *this) {
+    //new (m_Timer) Timer(100, &ManchesterCommunicationHandler::send, *this);
 }
 
 /*******************************************************************/
