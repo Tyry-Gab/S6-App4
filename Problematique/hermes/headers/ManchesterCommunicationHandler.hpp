@@ -10,13 +10,18 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     private:
     uint8_t m_TXPin;
     uint8_t m_RXPin;
-    //Timer* m_Timer;
+    Timer* m_Timer;
+
+    uint8_t m_BitToSend;
+    bool m_HasSent;
     
     // probably add internal functions to decode and encode bytes into manchester sequence
+    
 
     public:
+    void send();
     ManchesterCommunicationHandler();
-    ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin, Timer* p_Timer);
+    ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin);
 
     // ICommunicationHandler
     void sendByte(uint8_t byte);

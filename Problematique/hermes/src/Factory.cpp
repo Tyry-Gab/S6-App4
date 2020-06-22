@@ -17,7 +17,6 @@ ManchesterCommunicationHandler* Factory::createHandler1() {
 
     if(!s_Created) {
         new (&s_ManchesterCommunicationHandler) ManchesterCommunicationHandler();
-
         s_Created = true;
     }
 

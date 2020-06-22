@@ -18,7 +18,7 @@ void setup() {
 
 
 void loop() {
-  test_Handler->sendByte(0x77);
+  test_Handler->sendByte(0x7);
 
-  delay(100);
+  delay(500);
 }
