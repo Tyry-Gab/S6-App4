@@ -21,5 +21,4 @@ void loop() {
   test_Handler->sendByte(0x77);
 
   delay(100);
-
 }
