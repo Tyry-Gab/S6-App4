@@ -11,9 +11,22 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     uint8_t m_TXPin;
     uint8_t m_RXPin;
     Timer m_Timer;
+    
 
     uint8_t m_BitToSend;
     bool m_HasSent;
+    uint8_t m_ReveivingBuffer[80U];
+
+    volatile uint8_t data;
+    volatile bool m_isReceiving;
+    
+
+    enum state {
+        AWAITING    = 0U,
+        SETTING     = 1U,
+        READING     = 2U,
+        DONE        = 3U
+    } volatile m_State, m_NextState;  
     
     // probably add internal functions to decode and encode bytes into manchester sequence
     
@@ -28,4 +41,6 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     void sendBytes(uint8_t* bytes, uint32_t size);
     void receiveByte(uint8_t* byte);
     void receiveBytes(uint8_t* bytes, uint32_t size);
+    void onReceive();
+    void receive();
 };

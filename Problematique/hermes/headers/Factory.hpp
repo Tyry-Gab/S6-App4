@@ -15,6 +15,7 @@ class Factory {
     Factory();
 
     ManchesterCommunicationHandler* createHandler1();
+    ManchesterCommunicationHandler* createHandler2();
 };
 
 #endif // FACTORY_HPP

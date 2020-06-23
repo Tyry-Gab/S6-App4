@@ -16,20 +16,20 @@ void loop();
 #line 8 "c:/git/S6-App4/Problematique/Hermes/src/hermes.ino"
 SYSTEM_THREAD(ENABLED);
 
-ManchesterCommunicationHandler* test_Handler;
-uint8_t state = 0;
+ManchesterCommunicationHandler* test_Handler1;
+ManchesterCommunicationHandler* test_Handler2;
 
 void setup() {
   Factory factory;
   Serial.begin(9600);
-  test_Handler = factory.createHandler1();
-  pinMode(D7, OUTPUT);
+  test_Handler1 = factory.createHandler1();
+  test_Handler2 = factory.createHandler2();
 }
 
 
 void loop() {
-  test_Handler->sendByte(0x7);
-  state ^= 1;
-  //digitalWrite(D7, state);
-  delay(500);
+  test_Handler1->sendByte(0x7);
+  os_thread_yield();
+  pinSetFast(D7);
+  delay(1000);
 }
