@@ -7,31 +7,41 @@
 #include "Particle.h"
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(100, &ManchesterCommunicationHandler::send, *this) {
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(100, &ManchesterCommunicationHandler::execute, *this) {
     m_Timer.start();
 }
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(100, &ManchesterCommunicationHandler::send, *this) {
-    //new (m_Timer) Timer(100, &ManchesterCommunicationHandler::send, *this);
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(100, &ManchesterCommunicationHandler::execute, *this) {
+    //new (m_Timer) Timer(100, &ManchesterCommunicationHandler::execute, *this);
 }
 
 /*******************************************************************/
 void ManchesterCommunicationHandler::sendByte(uint8_t byte) {
-    Serial.printlnf("Sending byte %d", byte);
+    WITH_LOCK(Serial) {
+        Serial.printlnf("Sending byte %d", byte);
+    }
+    
 
     for (int i = 0; i<=7; i++) {
         uint8_t bit = byte & 0x01;
 
-        Serial.printf("%d%d ", bit ^ 0x1, bit);
+        WITH_LOCK(Serial) {
+            Serial.printf("%d%d ", bit ^ 0x1, bit);
+        }
+        
         m_BitToSend = bit ^ 0x1;
-        while(!m_HasSent);
+        while(!m_HasSent){
+            os_thread_yield();
+        }
         m_BitToSend = bit;
 
         byte >>= 0x1;
     }
-
-    Serial.printf("\n\r");
+    WITH_LOCK(Serial) {
+        Serial.printf("\n\r");
+    }
+    
 }
 
 /*******************************************************************/
@@ -50,8 +60,11 @@ void ManchesterCommunicationHandler::receiveBytes(uint8_t* bytes, uint32_t size)
 }
 
 /*******************************************************************/
-void ManchesterCommunicationHandler::send() {
-    Serial.printlnf("Callback successfull");
+void ManchesterCommunicationHandler::execute() {
+    WITH_LOCK(Serial) {
+        Serial.printlnf("Callback successfull");
+    }
+    
     if(m_BitToSend){
         pinSetFast(m_TXPin);
     }

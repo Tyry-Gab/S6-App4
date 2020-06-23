@@ -5,7 +5,7 @@
 
 #include "../headers/Factory.hpp"
 
-uint8_t t;
+SYSTEM_THREAD(ENABLED);
 
 ManchesterCommunicationHandler* test_Handler;
 

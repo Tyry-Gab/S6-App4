@@ -14,7 +14,7 @@
 void setup();
 void loop();
 #line 8 "c:/git/S6-App4/Problematique/Hermes/src/hermes.ino"
-uint8_t t;
+SYSTEM_THREAD(ENABLED);
 
 ManchesterCommunicationHandler* test_Handler;
 

@@ -19,7 +19,7 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     
 
     public:
-    void send();
+    void execute();
     ManchesterCommunicationHandler();
     ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin);
 
