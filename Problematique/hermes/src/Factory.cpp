@@ -16,7 +16,8 @@ ManchesterCommunicationHandler* Factory::createHandler1() {
     static ManchesterCommunicationHandler s_ManchesterCommunicationHandler;
 
     if(!s_Created) {
-        new (&s_ManchesterCommunicationHandler) ManchesterCommunicationHandler();
+        //pinMode(D7, OUTPUT);
+        new (&s_ManchesterCommunicationHandler) ManchesterCommunicationHandler(D7, D6);
         s_Created = true;
     }
 

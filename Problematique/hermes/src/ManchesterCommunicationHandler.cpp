@@ -13,7 +13,9 @@ ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(100, &
 
 /*******************************************************************/
 ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(100, &ManchesterCommunicationHandler::execute, *this) {
-    //new (m_Timer) Timer(100, &ManchesterCommunicationHandler::execute, *this);
+    m_Timer.start();
+    m_TXPin = p_TXPin;
+    m_RXPin = p_RXPin;
 }
 
 /*******************************************************************/
@@ -31,13 +33,20 @@ void ManchesterCommunicationHandler::sendByte(uint8_t byte) {
         }
         
         m_BitToSend = bit ^ 0x1;
+        m_HasSent = false;
         while(!m_HasSent){
             os_thread_yield();
         }
+
         m_BitToSend = bit;
+        m_HasSent = false;
+        while(!m_HasSent){
+            os_thread_yield();
+        }
 
         byte >>= 0x1;
     }
+
     WITH_LOCK(Serial) {
         Serial.printf("\n\r");
     }
@@ -46,7 +55,9 @@ void ManchesterCommunicationHandler::sendByte(uint8_t byte) {
 
 /*******************************************************************/
 void ManchesterCommunicationHandler::sendBytes(uint8_t* bytes, uint32_t size) {
-
+    for(uint32_t i = 0; i < size; i++) {
+        sendByte(bytes[i]);
+    }
 }
 
 /*******************************************************************/
@@ -62,10 +73,9 @@ void ManchesterCommunicationHandler::receiveBytes(uint8_t* bytes, uint32_t size)
 /*******************************************************************/
 void ManchesterCommunicationHandler::execute() {
     WITH_LOCK(Serial) {
-        Serial.printlnf("Callback successfull");
+        //Serial.printlnf("Callback successfull");
     }
-    
-    if(m_BitToSend){
+    if(m_BitToSend == 1U){
         pinSetFast(m_TXPin);
     }
     else {
