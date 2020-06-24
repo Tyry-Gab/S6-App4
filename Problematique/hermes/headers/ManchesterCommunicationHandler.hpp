@@ -23,6 +23,7 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     volatile uint8_t m_WritingHead;
     volatile bool data;
     volatile bool m_isReceiving;
+    bool m_HasNewByte;
     
 
     enum state {

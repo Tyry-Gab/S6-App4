@@ -18,12 +18,12 @@
   (byte & 0x01 ? '1' : '0') 
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(150, &ManchesterCommunicationHandler::execute, *this) {
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(5, &ManchesterCommunicationHandler::execute, *this) {
     m_isReceiving = false;
 }
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(150, &ManchesterCommunicationHandler::execute, *this){
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(5, &ManchesterCommunicationHandler::execute, *this){
     m_Timer.start();
     m_TXPin = p_TXPin;
     // Pin qui transmet reste à High par défaut.
@@ -42,13 +42,14 @@ ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, 
 
     m_ReceivedCount = 0U;
     m_WritingHead = 0U;
+    m_HasNewByte = false;
 }
 
 /*******************************************************************/
 void ManchesterCommunicationHandler::sendByte(uint8_t byte) {
-    WITH_LOCK(Serial) {
+    /*WITH_LOCK(Serial) {
         Serial.printlnf("Sending byte %d", byte);
-    }
+    }*/
     
     uint8_t mask = 0x80;
     for (int i = 7; i >= 0; i--) {
@@ -73,9 +74,9 @@ void ManchesterCommunicationHandler::sendByte(uint8_t byte) {
         mask >>= 1U;
     }
 
-    WITH_LOCK(Serial) {
+    /*WITH_LOCK(Serial) {
         Serial.printf("\n\r");
-    }
+    }*/
     
 }
 
@@ -119,6 +120,13 @@ void ManchesterCommunicationHandler::execute() {
         pinResetFast(m_TXPin);
     }
     m_HasSent = true;
+
+    if(m_HasNewByte){
+        WITH_LOCK(Serial) {
+            Serial.printlnf(" %d", m_ReceivingBuffer[m_WritingHead-1]);
+        }
+        m_HasNewByte = false;
+    }
     
 }
 
@@ -133,40 +141,18 @@ void ManchesterCommunicationHandler::onReceive() {
         break;
 
     case READING:
-        if (clockState == data) {
-            
-
+        if (clockState == data) {          
             m_ReceivedByte <<= 1U;
             m_ReceivedByte |= digitalRead(m_RXPin) ^ 0x1U;                
-   
             if(m_ReceivedCount == 7U){
-                WITH_LOCK(Serial) {
-                    Serial.printf("%d", m_ReceivedByte);
-                }
+                m_HasNewByte = true;
                 m_ReceivedCount = 0U;
                 m_ReceivingBuffer[m_WritingHead++] = m_ReceivedByte;
                 m_ReceivedByte = 0;
             }
             else {
                 m_ReceivedCount++;
-            }
-            /*m_ReceivedByte <<= 1U;
-
-            m_ReceivedByte |= (digitalRead(m_RXPin) ^ 0x1U);
-           
-            m_ReceivedCount++;
-            /*WITH_LOCK(Serial) {
-                Serial.printf("%d-", (m_ReceivedCount));
-            }*/        
-            /*if(m_ReceivedCount == 7U) {
-                
-                WITH_LOCK(Serial) {
-                    Serial.printlnf(" %d", m_ReceivingBuffer[m_WritingHead-1]);
-                }
-                
-                m_ReceivedByte = 0U;
-                m_ReceivedCount = 0U;
-            }          */  
+            } 
             lastCount = 0;
         }
         break;
