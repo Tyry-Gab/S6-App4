@@ -12,12 +12,14 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     uint8_t m_RXPin;
     Timer m_Timer;
     
+    volatile bool clockState;
+    int lastCount;
 
     uint8_t m_BitToSend;
-    bool m_HasSent;
+    volatile bool m_HasSent;
     uint8_t m_ReveivingBuffer[80U];
 
-    volatile uint8_t data;
+    volatile bool data;
     volatile bool m_isReceiving;
     
 
