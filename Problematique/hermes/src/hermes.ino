@@ -7,19 +7,40 @@
 
 SYSTEM_THREAD(ENABLED);
 
+#define START_BYTE_0   (0x55U);
+#define START_BYTE_1   (0x7EU);
+#define TYPE_FLAGS     (0U);
+#define END_BYTE       (0x7EU);
+
 ManchesterCommunicationHandler* test_Handler1;
 ManchesterCommunicationHandler* test_Handler2;
+CRC16* test_CRC16;
+
+uint8_t message[80U];
 
 void setup() {
   Factory factory;
   Serial.begin(9600);
   test_Handler1 = factory.createHandler1();
   test_Handler2 = factory.createHandler2();
+  test_CRC16 = factory.createCRC16();
+
+  delay(100);
+
+  message[0U] = START_BYTE_0;
+  message[1U] = START_BYTE_1;
+  message[2U] = TYPE_FLAGS;
+  message[3U] = 1; // payload de 1 byte pour commencer
+  message[4U] = 69;
+  message[5U] = test_CRC16->calculate(&message[4U], 1U);
+  message[6U] = END_BYTE;
+
+  delay(1000);
 }
 
 
 void loop() {
-  test_Handler1->sendByte(0x7);
+  test_Handler1->sendBytes(message, 7U);
   os_thread_yield();
   pinSetFast(D7);
   delay(1000);

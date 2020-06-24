@@ -6,14 +6,24 @@
 #include "../headers/ManchesterCommunicationHandler.hpp"
 #include "Particle.h"
 
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x80 ? '1' : '0'), \
+  (byte & 0x40 ? '1' : '0'), \
+  (byte & 0x20 ? '1' : '0'), \
+  (byte & 0x10 ? '1' : '0'), \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0') 
+
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(500, &ManchesterCommunicationHandler::execute, *this) {
-    m_Timer.start();
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(150, &ManchesterCommunicationHandler::execute, *this) {
     m_isReceiving = false;
 }
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(100, &ManchesterCommunicationHandler::execute, *this){
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(150, &ManchesterCommunicationHandler::execute, *this){
     m_Timer.start();
     m_TXPin = p_TXPin;
     // Pin qui transmet reste à High par défaut.
@@ -29,6 +39,9 @@ ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, 
     lastCount = 0;
 
     data = 0x0;
+
+    m_ReceivedCount = 0U;
+    m_WritingHead = 0U;
 }
 
 /*******************************************************************/
@@ -91,7 +104,10 @@ void ManchesterCommunicationHandler::execute() {
     
     if (lastCount > 3)
     {
-        m_State = AWAITING;        
+        m_State = AWAITING;
+        m_WritingHead = 0U;  
+        m_ReceivedByte = 0U;   
+        m_ReceivedCount = 0;   
     }
 
     delay(1);
@@ -103,14 +119,6 @@ void ManchesterCommunicationHandler::execute() {
         pinResetFast(m_TXPin);
     }
     m_HasSent = true;
-
-
-    /*if(m_isReceiving) {
-        data ^= 0x1;
-        WITH_LOCK(Serial) {
-            Serial.printf("%d", data);
-        }
-    } */
     
 }
 
@@ -126,13 +134,45 @@ void ManchesterCommunicationHandler::onReceive() {
 
     case READING:
         if (clockState == data) {
-            WITH_LOCK(Serial) {
-                Serial.printf("%d", digitalRead(m_RXPin) ^ 0x1U);
+            
+
+            m_ReceivedByte <<= 1U;
+            m_ReceivedByte |= digitalRead(m_RXPin) ^ 0x1U;                
+   
+            if(m_ReceivedCount == 7U){
+                WITH_LOCK(Serial) {
+                    Serial.printf("%d", m_ReceivedByte);
+                }
+                m_ReceivedCount = 0U;
+                m_ReceivingBuffer[m_WritingHead++] = m_ReceivedByte;
+                m_ReceivedByte = 0;
             }
+            else {
+                m_ReceivedCount++;
+            }
+            /*m_ReceivedByte <<= 1U;
+
+            m_ReceivedByte |= (digitalRead(m_RXPin) ^ 0x1U);
+           
+            m_ReceivedCount++;
+            /*WITH_LOCK(Serial) {
+                Serial.printf("%d-", (m_ReceivedCount));
+            }*/        
+            /*if(m_ReceivedCount == 7U) {
+                
+                WITH_LOCK(Serial) {
+                    Serial.printlnf(" %d", m_ReceivingBuffer[m_WritingHead-1]);
+                }
+                
+                m_ReceivedByte = 0U;
+                m_ReceivedCount = 0U;
+            }          */  
             lastCount = 0;
         }
         break;
-    
+    case DONE:
+        m_WritingHead = 0U;  
+        break;
     default:
         break;
     } 

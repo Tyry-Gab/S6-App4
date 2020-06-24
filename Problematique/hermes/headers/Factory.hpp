@@ -7,6 +7,7 @@
 #define FACTORY_HPP
 
 #include "ManchesterCommunicationHandler.hpp"
+#include "CRC16.hpp"
 
 class Factory {
     private:
@@ -16,6 +17,8 @@ class Factory {
 
     ManchesterCommunicationHandler* createHandler1();
     ManchesterCommunicationHandler* createHandler2();
+    CRC16* createCRC16();
+
 };
 
 #endif // FACTORY_HPP

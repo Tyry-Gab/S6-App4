@@ -17,8 +17,10 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
 
     uint8_t m_BitToSend;
     volatile bool m_HasSent;
-    uint8_t m_ReveivingBuffer[80U];
-
+    volatile uint8_t m_ReceivingBuffer[80U];
+    volatile uint8_t m_ReceivedByte;
+    volatile uint8_t m_ReceivedCount;
+    volatile uint8_t m_WritingHead;
     volatile bool data;
     volatile bool m_isReceiving;
     
