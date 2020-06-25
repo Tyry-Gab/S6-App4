@@ -5,9 +5,10 @@
 
 #ifndef NEW_H
 #define NEW_H
-
+#define DOMINGO
 #include <stddef.h>
 
 void* operator new(size_t, void* ptr);  /* placement new */
+
 
 #endif  /* NEW_H */
