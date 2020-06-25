@@ -30,18 +30,23 @@ void setup() {
   message[0U] = START_BYTE_0;
   message[1U] = START_BYTE_1;
   message[2U] = TYPE_FLAGS;
-  message[3U] = 1; // payload de 1 byte pour commencer
-  message[4U] = 69;
-  message[5U] = test_CRC16->calculate(&message[4U], 1U);
-  message[6U] = END_BYTE;
+  message[3U] = 69; // payload de 1 byte pour commencer
+  for(int i = 4; i <= 77; i++){
+    message[i] = i;
+  }
+  message[78U] = test_CRC16->calculate(&message[4U],3U);
+  message[79U] = END_BYTE;
 
   delay(1000);
 }
 
 
 void loop() {
-  test_Handler1->sendBytes(message, 7U);
+  test_Handler1->sendBytes(message, 80);
   os_thread_yield();
   pinSetFast(D7);
   delay(1000);
+  WITH_LOCK(Serial) {
+    Serial.printlnf(" ");
+  }
 }

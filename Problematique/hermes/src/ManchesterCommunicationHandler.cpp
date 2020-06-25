@@ -18,12 +18,12 @@
   (byte & 0x01 ? '1' : '0') 
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(1, &ManchesterCommunicationHandler::execute, *this) {
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(2, &ManchesterCommunicationHandler::execute, *this) {
     m_isReceiving = false;
 }
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(1, &ManchesterCommunicationHandler::execute, *this){
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(2, &ManchesterCommunicationHandler::execute, *this){
     m_Timer.start();
     m_TXPin = p_TXPin;
     // Pin qui transmet reste à High par défaut.
@@ -159,7 +159,8 @@ void ManchesterCommunicationHandler::onReceive() {
         break;
     default:
         break;
-    } 
+    }
+    
 }
 
 /*******************************************************************/
