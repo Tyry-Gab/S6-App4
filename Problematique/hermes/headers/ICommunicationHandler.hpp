@@ -15,8 +15,6 @@ private:
 public:
     virtual void sendByte(uint8_t byte) = 0;
     virtual void sendBytes(uint8_t* bytes, uint32_t size) = 0;
-    virtual void receiveByte(uint8_t* byte) = 0;
-    virtual void receiveBytes(uint8_t* bytes, uint32_t size) = 0;
 };
 
 #endif // ICOMMUNICATIONHANDLER_HPP

@@ -21,15 +21,10 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     volatile uint8_t m_ReceivingBuffer[73U];
     volatile bool m_HasSent;
     uint8_t m_BitToSend;
-
-    volatile bool data;
-    volatile bool m_isReceiving;
-
+    volatile bool data;    
     volatile uint8_t m_ReadingByteCounter;
     volatile uint8_t m_MessageLength;
-
     volatile uint16_t m_CrcReceived;
-
     volatile bool m_IsDataReady;
     
     CRC16* m_CRC16;
@@ -57,6 +52,5 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     void sendByte(uint8_t byte);
     void sendBytes(uint8_t* bytes, uint32_t size);
     void onReceive();
-    void receive();
     void printReceivedData();
 };

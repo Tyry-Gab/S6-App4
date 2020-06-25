@@ -9,13 +9,12 @@ SYSTEM_THREAD(ENABLED);
 
 #define START_BYTE_0   (0x55U);
 #define START_BYTE_1   (0x7EU);
-#define TYPE_FLAGS     (0U);
+#define TYPE_FLAGS     (0x00U);
 #define END_BYTE       (0x7EU);
 
 ManchesterCommunicationHandler* test_Handler1;
 ManchesterCommunicationHandler* test_Handler2;
 CRC16* test_CRC16;
-system_tick_t lastSentTime;
 
 uint8_t message[80U];
 
@@ -39,9 +38,6 @@ void setup() {
   message[78U] = crc & 0xFF;  
   message[79U] = END_BYTE;
 
-  Thread sending("sending", sendingThread);
-  Thread receiving("receiving", receivingThread);
-
   delay(1000);
 }
 
@@ -55,20 +51,5 @@ void loop() {
   delay(1000);
   WITH_LOCK(Serial) {
     Serial.printlnf(" ");
-  }
-}
-
-
-void sendingThread() {
-  while(true) {
-    test_Handler1->sendBytes(message, 80);
-    os_thread_delay_until (&lastSentTime , 1000); //Send message every second
-  }  
-}
-
-void receivingThread() {
-  while (true) {
-    test_Handler2->printReceivedData();
-    os_thread_yield();
   }
 }
