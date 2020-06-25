@@ -12,33 +12,30 @@
 #define END_BYTE       (0x7EU)
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(2, &ManchesterCommunicationHandler::execute, *this) {
-    m_isReceiving = false;
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(2, &ManchesterCommunicationHandler::execute, *this) {    
 }
 
 /*******************************************************************/
 ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin, CRC16* p_CRC16): m_Timer(2, &ManchesterCommunicationHandler::execute, *this){
-    m_Timer.start();
     m_TXPin = p_TXPin;
     // Pin qui transmet reste à High par défaut.
     pinSetFast(m_TXPin);
+    m_RXPin = p_RXPin;    
 
-    m_RXPin = p_RXPin;
-    m_isReceiving = false;
-    clockState = false;
-    attachInterrupt(m_RXPin, &ManchesterCommunicationHandler::onReceive, this, CHANGE);
     m_State = AWAITING;
 
+    clockState = false;
+    
     lastCount = 0;
-
     data = 0x0;
-
-    m_IsDataReady = false;
-
     m_ReceivedCount = 0U;
     m_WritingHead = 0U;
-    m_HasNewByte = false;
+
     m_CRC16 = p_CRC16;
+    m_IsDataReady = false;
+
+    m_Timer.start();
+    attachInterrupt(m_RXPin, &ManchesterCommunicationHandler::onReceive, this, CHANGE);
 }
 
 /*******************************************************************/
@@ -97,13 +94,6 @@ void ManchesterCommunicationHandler::execute() {
         pinResetFast(m_TXPin);
     }
     m_HasSent = true;
-
-    if(m_HasNewByte){
-        WITH_LOCK(Serial) {
-            Serial.printlnf(" %d", m_ReceivingBuffer[m_WritingHead-1]);
-        }
-        m_HasNewByte = false;
-    }
     
 }
 
@@ -252,11 +242,6 @@ void ManchesterCommunicationHandler::onReceive() {
     }     
 }
 
-/*******************************************************************/
-void ManchesterCommunicationHandler::receive() {
-            
-}
-
 /******************************************************************/
 void ManchesterCommunicationHandler::printReceivedData() {
     if (m_IsDataReady) {
@@ -266,7 +251,7 @@ void ManchesterCommunicationHandler::printReceivedData() {
         for (int i = 0; i < m_MessageLength; i++)
         {
             WITH_LOCK(Serial) {
-                Serial.printlnf("%d", m_ReceivingBuffer[i]);
+                Serial.printf("%d ", m_ReceivingBuffer[i]);
             }
         }
         
