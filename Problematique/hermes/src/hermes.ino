@@ -38,6 +38,9 @@ void setup() {
   message[78U] = crc & 0xFF;  
   message[79U] = END_BYTE;
 
+  //Thread sending("sending", sendingThread);
+  //Thread receiving("receiving", receivingThread);
+
   delay(1000);
 }
 

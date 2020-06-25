@@ -33,26 +33,22 @@ void setup() {
   test_Handler1 = factory.createHandler1();
   test_Handler2 = factory.createHandler2();
   test_CRC16 = factory.createCRC16();
-
   delay(100);
-
-  /*message[0U] = START_BYTE_0;
-  message[1U] = START_BYTE_1;
-  message[2U] = TYPE_FLAGS;
-  message[3U] = 1; // payload de 1 byte pour commencer
-  message[4U] = 69;
-  message[5U] = test_CRC16->calculate(&message[4U], 1U);
-  message[6U] = END_BYTE;*/
 
   message[0U] = START_BYTE_0;
   message[1U] = START_BYTE_1;
   message[2U] = TYPE_FLAGS;
-  message[3U] = 69; // payload de 1 byte pour commencer
-  for(int i = 4; i <= 77; i++){
+  message[3U] = 73; // payload de 1 byte pour commencer
+  for(int i = 4; i <= 76; i++){
     message[i] = i;
   }
-  message[78U] = test_CRC16->calculate(&message[4U],3U);
+  uint16_t crc = test_CRC16->calculate(&message[4U],73U);
+  message[77U] = (crc >> 8) & 0xFF;
+  message[78U] = crc & 0xFF;  
   message[79U] = END_BYTE;
+
+  //Thread sending("sending", sendingThread);
+  //Thread receiving("receiving", receivingThread);
 
   delay(1000);
 }
@@ -60,8 +56,10 @@ void setup() {
 
 void loop() {
   test_Handler1->sendBytes(message, 80);
-  os_thread_yield();
+  os_thread_yield();  
   pinSetFast(D7);
+  delay(1000);
+  test_Handler2->printReceivedData();
   delay(1000);
   WITH_LOCK(Serial) {
     Serial.printlnf(" ");
