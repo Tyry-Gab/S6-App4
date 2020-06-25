@@ -18,7 +18,7 @@ ManchesterCommunicationHandler* Factory::createHandler1() {
     if(!s_Created) {
         pinMode(D7, OUTPUT);
         pinMode(D6, INPUT_PULLUP);
-        new (&s_ManchesterCommunicationHandler) ManchesterCommunicationHandler(D7, D6);
+        new (&s_ManchesterCommunicationHandler) ManchesterCommunicationHandler(D7, D6, createCRC16());
         s_Created = true;
     }
 
@@ -33,7 +33,7 @@ ManchesterCommunicationHandler* Factory::createHandler2() {
     if(!s_Created) {
         pinMode(D4, OUTPUT);
         pinMode(D5, INPUT_PULLUP);
-        new (&s_ManchesterCommunicationHandler) ManchesterCommunicationHandler(D4, D5);
+        new (&s_ManchesterCommunicationHandler) ManchesterCommunicationHandler(D4, D5, createCRC16());
         s_Created = true;
     }
 

@@ -6,16 +6,10 @@
 #include "../headers/ManchesterCommunicationHandler.hpp"
 #include "Particle.h"
 
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte)  \
-  (byte & 0x80 ? '1' : '0'), \
-  (byte & 0x40 ? '1' : '0'), \
-  (byte & 0x20 ? '1' : '0'), \
-  (byte & 0x10 ? '1' : '0'), \
-  (byte & 0x08 ? '1' : '0'), \
-  (byte & 0x04 ? '1' : '0'), \
-  (byte & 0x02 ? '1' : '0'), \
-  (byte & 0x01 ? '1' : '0') 
+#define START_BYTE_0   (0x55U)
+#define START_BYTE_1   (0x7EU)
+#define TYPE_FLAGS     (0U)
+#define END_BYTE       (0x7EU)
 
 /*******************************************************************/
 ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(2, &ManchesterCommunicationHandler::execute, *this) {
@@ -23,7 +17,7 @@ ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(2, &Ma
 }
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin): m_Timer(2, &ManchesterCommunicationHandler::execute, *this){
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin, CRC16* p_CRC16): m_Timer(2, &ManchesterCommunicationHandler::execute, *this){
     m_Timer.start();
     m_TXPin = p_TXPin;
     // Pin qui transmet reste à High par défaut.
@@ -34,30 +28,26 @@ ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, 
     clockState = false;
     attachInterrupt(m_RXPin, &ManchesterCommunicationHandler::onReceive, this, CHANGE);
     m_State = AWAITING;
-    m_NextState = AWAITING;
 
     lastCount = 0;
 
     data = 0x0;
 
+    m_IsDataReady = false;
+
     m_ReceivedCount = 0U;
     m_WritingHead = 0U;
     m_HasNewByte = false;
+    m_CRC16 = p_CRC16;
 }
 
 /*******************************************************************/
 void ManchesterCommunicationHandler::sendByte(uint8_t byte) {
-    /*WITH_LOCK(Serial) {
-        Serial.printlnf("Sending byte %d", byte);
-    }*/
     
     uint8_t mask = 0x80;
     for (int i = 7; i >= 0; i--) {
         uint8_t bit = byte & mask;
         bit >>= i;  
-        /*WITH_LOCK(Serial) {
-            //Serial.printf("%d%d ", bit, bit ^ 0x1);
-        }*/
         
         m_BitToSend = bit;
         m_HasSent = false;
@@ -73,10 +63,6 @@ void ManchesterCommunicationHandler::sendByte(uint8_t byte) {
 
         mask >>= 1U;
     }
-
-    /*WITH_LOCK(Serial) {
-        Serial.printf("\n\r");
-    }*/
     
 }
 
@@ -89,19 +75,12 @@ void ManchesterCommunicationHandler::sendBytes(uint8_t* bytes, uint32_t size) {
 }
 
 /*******************************************************************/
-void ManchesterCommunicationHandler::receiveByte(uint8_t* byte) {
-
-}
-
-/*******************************************************************/
-void ManchesterCommunicationHandler::receiveBytes(uint8_t* bytes, uint32_t size) {
-
-}
-
-/*******************************************************************/
 void ManchesterCommunicationHandler::execute() {
     clockState = !clockState;
-    lastCount++;
+    if (digitalRead(m_RXPin) == 0x1U)
+        lastCount = lastCount + 1;
+    else 
+        lastCount = 0;
     
     if (lastCount > 3)
     {
@@ -134,36 +113,167 @@ void ManchesterCommunicationHandler::onReceive() {
     {
     case AWAITING:
         data = !clockState;
-        m_State = READING;
-        lastCount = 0;
+        m_State = PREAMBULE;
+        break;
+
+    case PREAMBULE:
+        if (clockState == data) {          
+            m_ReceivedByte <<= 1U;
+            m_ReceivedByte |= digitalRead(m_RXPin) ^ 0x1U;
+            if(m_ReceivedCount != 7U){
+                m_ReceivedCount++;
+            } 
+            else {
+                if (m_ReceivedByte != START_BYTE_0){
+                    m_State = ERROR;
+                } else {
+                    m_State = START;
+                }
+                m_ReceivedCount = 0U;
+                m_ReceivedByte = 0;
+            }
+        }
+        break;
+
+    case START:
+        if (clockState == data) {          
+            m_ReceivedByte <<= 1U;
+            m_ReceivedByte |= digitalRead(m_RXPin) ^ 0x1U;                
+            if(m_ReceivedCount != 7U){
+                m_ReceivedCount++;
+            } 
+            else {
+                if (m_ReceivedByte != START_BYTE_1){
+                    m_State = ERROR;
+                } else {
+                    m_State = TYPE_FLAG;
+                }
+                m_ReceivedCount = 0U;
+                m_ReceivedByte = 0;
+            }
+        }
+        break;
+
+    case TYPE_FLAG:
+        if (clockState == data) {          
+            m_ReceivedByte <<= 1U;
+            m_ReceivedByte |= digitalRead(m_RXPin) ^ 0x1U;                
+            if(m_ReceivedCount != 7U){
+                m_ReceivedCount++;
+            } 
+            else {
+                if (m_ReceivedByte != TYPE_FLAGS){
+                    m_State = ERROR;
+                } else {
+                    m_State = LENGTH;
+                }
+                m_ReceivedCount = 0U;
+                m_ReceivedByte = 0;
+            }
+        }
+        break;
+
+    case LENGTH:
+        if (clockState == data) {          
+            m_ReceivedByte <<= 1U;
+            m_ReceivedByte |= digitalRead(m_RXPin) ^ 0x1U;                
+            if(m_ReceivedCount != 7U){
+                m_ReceivedCount++;
+            } 
+            else {
+                m_State = READING;  
+                m_IsDataReady = false;  
+                m_MessageLength = m_ReceivedByte;
+                m_ReadingByteCounter = 0;            
+                m_ReceivedCount = 0U;
+                m_ReceivedByte = 0;
+            }
+        }
         break;
 
     case READING:
         if (clockState == data) {          
             m_ReceivedByte <<= 1U;
             m_ReceivedByte |= digitalRead(m_RXPin) ^ 0x1U;                
-            if(m_ReceivedCount == 7U){
-                m_HasNewByte = true;
-                m_ReceivedCount = 0U;
-                m_ReceivingBuffer[m_WritingHead++] = m_ReceivedByte;
-                m_ReceivedByte = 0;
-            }
-            else {
+            if(m_ReceivedCount != 7U){
                 m_ReceivedCount++;
             } 
-            lastCount = 0;
+            else {
+                m_ReceivingBuffer[m_WritingHead++] = m_ReceivedByte;
+                ++m_ReadingByteCounter;
+                if (m_ReadingByteCounter == m_MessageLength) {
+                    m_CrcReceived = 0x0000;
+                    m_State = CRC;            
+                }
+                m_ReceivedCount = 0U;
+                m_ReceivedByte = 0;
+            }
         }
         break;
-    case DONE:
-        m_WritingHead = 0U;  
+
+    case CRC:
+        if (clockState == data) {          
+            m_CrcReceived <<= 1U;
+            m_CrcReceived |= digitalRead(m_RXPin) ^ 0x1U;                
+            if(m_ReceivedCount != 15U){
+                m_ReceivedCount++;
+            } 
+            else {
+                m_State = END;
+                m_ReceivedCount = 0U;
+            }
+        }
+        break;
+
+    case END:
+        if (clockState == data) {          
+            m_ReceivedByte <<= 1U;
+            m_ReceivedByte |= digitalRead(m_RXPin) ^ 0x1U;                
+            if(m_ReceivedCount != 7U){
+                m_ReceivedCount++;
+            } 
+            else {
+                if (m_ReceivedByte != END_BYTE){
+                    m_State = ERROR;
+                } else {
+                    m_IsDataReady = m_CRC16->calculate( (const_cast <uint8_t*> (m_ReceivingBuffer)) , m_MessageLength) == m_CrcReceived;            
+                    m_WritingHead = 0U; 
+                }
+                m_ReceivedCount = 0U;
+                m_ReceivedByte = 0;
+            }
+        }
+        break;
+
+    case ERROR:
         break;
     default:
         break;
-    }
-    
+    }     
 }
 
 /*******************************************************************/
 void ManchesterCommunicationHandler::receive() {
             
+}
+
+/******************************************************************/
+void ManchesterCommunicationHandler::printReceivedData() {
+    if (m_IsDataReady) {
+        WITH_LOCK(Serial) {
+            Serial.println("Data received: ");            
+        }
+        for (int i = 0; i < m_MessageLength; i++)
+        {
+            WITH_LOCK(Serial) {
+                Serial.printlnf("%d", m_ReceivingBuffer[i]);
+            }
+        }
+        
+    }
+    else {
+        WITH_LOCK(Serial) {
+            Serial.printlnf("No data received...");
+        }
+    }
 }
