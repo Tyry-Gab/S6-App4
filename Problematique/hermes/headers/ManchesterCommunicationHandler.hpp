@@ -4,6 +4,7 @@
  */
 
 #include "ICommunicationHandler.hpp"
+#include "CRC16.hpp"
 #include "Particle.h"
 
 class ManchesterCommunicationHandler : public ICommunicationHandler {
@@ -14,38 +15,48 @@ class ManchesterCommunicationHandler : public ICommunicationHandler {
     
     volatile bool clockState;
     int lastCount;
-
-    uint8_t m_BitToSend;
-    volatile bool m_HasSent;
-    volatile uint8_t m_ReceivingBuffer[80U];
-    volatile uint8_t m_ReceivedByte;
     volatile uint8_t m_ReceivedCount;
     volatile uint8_t m_WritingHead;
+    volatile uint8_t m_ReceivedByte;
+    volatile uint8_t m_ReceivingBuffer[73U];
+    volatile bool m_HasSent;
+    uint8_t m_BitToSend;
+
     volatile bool data;
     volatile bool m_isReceiving;
-    bool m_HasNewByte;
+
+    volatile uint8_t m_ReadingByteCounter;
+    volatile uint8_t m_MessageLength;
+
+    volatile uint16_t m_CrcReceived;
+
+    volatile bool m_IsDataReady;
     
+    CRC16* m_CRC16;
 
     enum state {
         AWAITING    = 0U,
-        SETTING     = 1U,
-        READING     = 2U,
-        DONE        = 3U
-    } volatile m_State, m_NextState;  
+        PREAMBULE   = 1U,
+        START       = 2U,
+        TYPE_FLAG   = 3U,
+        LENGTH      = 4U,
+        READING     = 5U,
+        CRC         = 6U,
+        END         = 7U,
+        ERROR       = 8U
+    } volatile m_State;  
     
-    // probably add internal functions to decode and encode bytes into manchester sequence
     
 
     public:
     void execute();
     ManchesterCommunicationHandler();
-    ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin);
+    ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin, CRC16* p_CRC16);
 
     // ICommunicationHandler
     void sendByte(uint8_t byte);
     void sendBytes(uint8_t* bytes, uint32_t size);
-    void receiveByte(uint8_t* byte);
-    void receiveBytes(uint8_t* bytes, uint32_t size);
     void onReceive();
     void receive();
+    void printReceivedData();
 };
