@@ -12,11 +12,11 @@
 #define END_BYTE       (0x7EU)
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(2, &ManchesterCommunicationHandler::execute, *this) {    
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(): m_Timer(5, &ManchesterCommunicationHandler::execute, *this) {    
 }
 
 /*******************************************************************/
-ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin, CRC16* p_CRC16): m_Timer(2, &ManchesterCommunicationHandler::execute, *this){
+ManchesterCommunicationHandler::ManchesterCommunicationHandler(uint8_t p_TXPin, uint8_t p_RXPin, CRC16* p_CRC16): m_Timer(5, &ManchesterCommunicationHandler::execute, *this){
     m_TXPin = p_TXPin;
     // Pin qui transmet reste à High par défaut.
     pinSetFast(m_TXPin);
@@ -254,7 +254,9 @@ void ManchesterCommunicationHandler::printReceivedData() {
                 Serial.printf("%d ", m_ReceivingBuffer[i]);
             }
         }
-        
+        WITH_LOCK(Serial) {
+            Serial.printlnf("");
+        }      
     }
     else {
         WITH_LOCK(Serial) {
