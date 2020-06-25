@@ -31,14 +31,14 @@ void setup() {
   message[0U] = START_BYTE_0;
   message[1U] = START_BYTE_1;
   message[2U] = TYPE_FLAGS;
-  message[3U] = 17; // payload de 1 byte pour commencer
-  for(int i = 4; i <= 20; i++){
+  message[3U] = 73; // payload de 1 byte pour commencer
+  for(int i = 4; i <= 76; i++){
     message[i] = i;
   }
-  uint16_t crc = test_CRC16->calculate(&message[4U],17U);
-  message[21U] = (crc >> 8) & 0xFF;
-  message[22U] = crc & 0xFF;  
-  message[23U] = END_BYTE;
+  uint16_t crc = test_CRC16->calculate(&message[4U],73U);
+  message[77U] = (crc >> 8) & 0xFF;
+  message[78U] = crc & 0xFF;  
+  message[79U] = END_BYTE;
 
   
 
@@ -53,7 +53,7 @@ void loop() {
 
 void sendingThread(){
   while(true) {
-    test_Handler1->sendBytes(message, 24);
+    test_Handler1->sendBytes(message, 80);
     pinSetFast(D7);
     delay(1000);
   }
